@@ -14,40 +14,48 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;width:100%;overflow-x:hidden;background:#FAFAFA;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Helvetica,Arial,sans-serif;color:#333}
-  body{padding-top:calc(env(safe-area-inset-top) + 0px)}
   #calendar{height:100vh;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;-webkit-overflow-scrolling:touch}
-  #yearBar{position:sticky;top:0;z-index:6;padding:14px 16px 10px;background:rgba(250,250,250,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:18px;color:#222;font-weight:600;text-align:center;letter-spacing:2px;border-bottom:.5px solid rgba(0,0,0,.06)}
-  .month{padding:6px 14px 22px}
-  .month-title{font-size:12px;color:#999;padding:14px 4px 10px;font-weight:500;text-align:center;letter-spacing:2px}
-  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);font-size:11px;color:#bbb;text-align:center;padding-bottom:6px}
+
+  /* 年份悬浮栏 + 距上次开始小字 */
+  #yearBar{position:sticky;top:0;z-index:6;background:rgba(250,250,250,.88);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:.5px solid rgba(0,0,0,.06);padding-top:calc(env(safe-area-inset-top) + 4px);padding-bottom:6px}
+  #yearBar .year{font-size:19px;color:#222;font-weight:700;text-align:center;letter-spacing:3px;padding:6px 16px 2px}
+  #yearBar .sub{font-size:11px;color:#999;text-align:center;letter-spacing:1px;padding-bottom:6px}
+
+  /* 日历网格 */
+  .month{padding:8px 14px 26px}
+  .month-title{font-size:16px;color:#1a1a1a;padding:16px 4px 12px;font-weight:700;text-align:center;letter-spacing:2px}
+  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);font-size:11px;color:#333;text-align:center;padding-bottom:8px;font-weight:700}
   .days{display:grid;grid-template-columns:repeat(7,1fr);row-gap:14px}
-  .day{position:relative;aspect-ratio:1/1.12;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:8px;font-size:14px;color:#333}
+  .day{position:relative;aspect-ratio:1/1.12;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:8px;font-size:14px;color:#1a1a1a}
   .day.empty{visibility:hidden}
-  .day .num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:2px}
-  .day.today .num{background:#E53935;color:#fff;font-weight:700;font-size:13px}
+  .day .num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:2px;font-weight:700}
+  .day.today .num{background:#E53935;color:#fff;font-size:13px}
   .day .mini-heart-wrap{width:100%;display:flex;justify-content:center;align-items:center;margin-top:2px}
   .mini-heart{width:18px;height:16px;flex-shrink:0}
-  #backToday{position:fixed;right:16px;bottom:28px;z-index:20;width:44px;height:44px;border-radius:50%;background:#222;color:#fff;border:none;font-size:12px;font-weight:600;letter-spacing:1px;box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(20px);transition:opacity .25s,transform .25s}
+
+  /* 回到今日按钮 */
+  #backToday{position:fixed;right:16px;bottom:28px;z-index:20;width:44px;height:44px;border-radius:50%;background:rgba(34,34,34,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;border:none;font-size:12px;font-weight:600;letter-spacing:1px;box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(20px);transition:opacity .25s,transform .25s}
   #backToday.show{opacity:1;transform:translateY(0)}
 
-  /* ===== 磨砂浮层 ===== */
-  .overlay{position:fixed;inset:0;background:rgba(255,255,255,.35);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:center;z-index:100;visibility:hidden;opacity:0;transition:opacity .18s ease}
+  /* ===== 磨砂浮层（修复版） ===== */
+  .overlay{position:fixed;inset:0;background-color:rgba(255,255,255,0.45);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;z-index:100;visibility:hidden;opacity:0;transition:opacity .18s ease}
   .overlay.show{visibility:visible;opacity:1}
-  .overlay-card{width:82vw;max-width:310px;background:rgba(250,250,250,.75);border-radius:28px;padding:30px 22px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 14px 40px rgba(0,0,0,.14);transform:scale(.92);transition:transform .2s cubic-bezier(.34,1.56,.64,1);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:.5px solid rgba(255,255,255,.8)}
+  .overlay-card{width:82vw;max-width:310px;background-color:rgba(255,255,255,0.7);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-radius:28px;padding:34px 22px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 14px 40px rgba(0,0,0,.14);transform:scale(.92);transition:transform .2s cubic-bezier(.34,1.56,.64,1);border:.5px solid rgba(255,255,255,.8)}
   .overlay.show .overlay-card{transform:scale(1)}
   .heart-wrap{width:90px;height:80px;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.18))}
   .heart-svg{width:100%;height:100%;display:block}
-  .clear-btn{width:26px;height:26px;border-radius:50%;border:none;background:#e4e4e4;color:#999;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s}
-  .clear-btn:active{background:#d4d4d4}
-  .hint{font-size:11px;color:#aaa;letter-spacing:.5px;margin-top:4px}
+  .hint{font-size:11px;color:#aaa;letter-spacing:.5px;margin-top:6px}
 </style>
 </head>
 <body>
 <div id="calendar">
-  <div id="yearBar">2026 年</div>
+  <div id="yearBar">
+    <div class="year">2026 年</div>
+    <div class="sub">距上次开始已过 <span id="daysSince">0</span> 天</div>
+  </div>
   <div id="months"></div>
 </div>
-<button id="backToday">今天</button>
+<button id="backToday">今日</button>
 
 <div id="overlay" class="overlay">
   <div class="overlay-card">
@@ -60,7 +68,6 @@
         <defs><linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF8A80"/><stop offset="100%" stop-color="#C62828"/></linearGradient></defs>
       </svg>
     </div>
-    <button id="clearBtn" class="clear-btn">✕</button>
     <div class="heart-wrap" id="blackWrap">
       <svg viewBox="0 0 100 90" class="heart-svg" id="blackHeart">
         <defs><clipPath id="clipBlack"><path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z"/></clipPath></defs>
@@ -86,7 +93,6 @@
   const addMonths=(y,m,d)=>{m+=d;while(m<0){m+=12;y--}while(m>11){m-=12;y++}return{y,m}};
   const addDays=(s,n)=>{const x=new Date(s+'T00:00:00');x.setDate(x.getDate()+n);return dkey(x.getFullYear(),x.getMonth(),x.getDate())};
 
-  // 日期下方爱心（绝对居中 + 动态填充）
   function miniHeartHtml(blood,color){
     if(!blood && !color) return '';
     const tier = blood>0?blood:color;
@@ -107,23 +113,22 @@
 
   const calendar=document.getElementById('calendar');
   const months=document.getElementById('months');
-  const yearBar=document.getElementById('yearBar');
+  const yearBarEl=document.querySelector('#yearBar .year');
+  const daysSinceEl=document.getElementById('daysSince');
   const overlay=document.getElementById('overlay');
-  const overlayCard=overlay.querySelector('.overlay-card');
-  const clearBtn=document.getElementById('clearBtn');
   const redFill=document.getElementById('redFill');
   const blackFill=document.getElementById('blackFill');
   const backTodayBtn=document.getElementById('backToday');
 
+  // 每个月卡片存年份、月份，便于随时更新年份悬浮栏
   function buildMonth(y,m){
     const el=document.createElement('div');
     el.className='month';
-    // 周日为首列：(new Date(y,m,1).getDay()) 0=Sun ... 6=Sat
+    el.dataset.year=y;el.dataset.month=m;
     const offset=new Date(y,m,1).getDay();
     const dim=new Date(y,m+1,0).getDate();
     const tk=todayStr();
     let h=`<div class="month-title">${m+1}月</div>`;
-    // 首列"日"
     h+='<div class="weekdays">'+['日','一','二','三','四','五','六'].map(w=>`<span>${w}</span>`).join('')+'</div>';
     h+='<div class="days">';
     for(let i=0;i<offset;i++) h+='<div class="day empty"></div>';
@@ -140,47 +145,57 @@
 
   const now=new Date();
   let rendered={min:addMonths(now.getFullYear(),now.getMonth(),-2),max:addMonths(now.getFullYear(),now.getMonth(),2)};
-  (function init(){
+
+  function init(){
     for(let y=rendered.min.y,m=rendered.min.m;;){
       months.appendChild(buildMonth(y,m));
       if(y===rendered.max.y&&m===rendered.max.m) break;
       const n=addMonths(y,m,1);y=n.y;m=n.m;
     }
-    yearBar.textContent=now.getFullYear()+' 年';
+    yearBarEl.textContent=now.getFullYear()+' 年';
+    updateDaysSince();
     requestAnimationFrame(()=>{
       const t=document.querySelector('.day.today');
       if(t) t.scrollIntoView({block:'center'});
+      requestAnimationFrame(updateYearBar);
     });
-  })();
+  }
 
-  // 年份悬浮自动切换（检测当前在视口内的月份）
+  // 年份跟随：读取每个 month 卡片上 dataset.year / month，判断当前视口内主月
   function updateYearBar(){
     const cards=months.querySelectorAll('.month');
-    const midY=calendar.scrollTop+calendar.clientHeight*0.3;
+    const midY=calendar.scrollTop+calendar.clientHeight*0.35;
     let cur=null;
     for(const c of cards){
       if(c.offsetTop<=midY && c.offsetTop+c.offsetHeight>midY){cur=c;break}
     }
-    if(!cur) return;
-    const title=cur.querySelector('.month-title').textContent; // "X月"
-    const monthIdx=parseInt(title,10)-1;
-    // 从哪个月份反推年份？cur 没有存年份，用 rendered.min 推算
-    let y=rendered.min.y,m=rendered.min.m;
-    for(let i=0;i<cards.length;i++){
-      if(i===cards.indexOf(cur)){break}
-      const n=addMonths(y,m,1);y=n.y;m=n.m;
+    if(cur){
+      const y=parseInt(cur.dataset.year,10);
+      yearBarEl.textContent=y+' 年';
     }
-    yearBar.textContent=y+' 年';
+  }
+
+  function updateDaysSince(){
+    const keys=Object.keys(records).sort();
+    if(!keys.length){daysSinceEl.textContent='0';return}
+    const tk=todayStr();
+    let i=keys.length-1;
+    while(i>=0&&keys[i]>tk) i--;
+    if(i<0){daysSinceEl.textContent='0';return}
+    let cur=keys[i],start=cur;
+    while(i>0){const prev=addDays(cur,-1);if(records[prev]){start=prev;cur=prev;i--}else break}
+    daysSinceEl.textContent=Math.round((new Date(tk+'T00:00:00')-new Date(start+'T00:00:00'))/86400000);
   }
 
   function updateBackBtn(){
     const t=document.querySelector('.day.today');
     if(!t){backTodayBtn.classList.remove('show');return}
     const r=t.getBoundingClientRect();
-    if(r.top < 80 || r.bottom > window.innerHeight - 40) backTodayBtn.classList.add('show');
+    if(r.top < 100 || r.bottom > window.innerHeight - 40) backTodayBtn.classList.add('show');
     else backTodayBtn.classList.remove('show');
   }
 
+  // 滚动：动态加载 + 年份跟随
   calendar.addEventListener('scroll',()=>{
     const{scrollTop:st,scrollHeight:sh,clientHeight:ch}=calendar;
     if(sh-st-ch<400){
@@ -202,7 +217,7 @@
     let t=document.querySelector('.day.today');
     if(!t){
       const today=new Date();
-      const tm=addMonths(today.getFullYear(),today.getMonth(),0);
+      const tm={y:today.getFullYear(),m:today.getMonth()};
       months.innerHTML='';
       const newMin=addMonths(tm.y,tm.m,-2),newMax=addMonths(tm.y,tm.m,2);
       rendered={min:newMin,max:newMax};
@@ -212,24 +227,13 @@
         const n=addMonths(y,m,1);y=n.y;m=n.m;
       }
       t=document.querySelector('.day.today');
+      updateYearBar();
     }
     if(t) calendar.scrollTo({top:t.offsetTop-calendar.clientHeight/2+t.clientHeight/2,behavior:'smooth'});
     updateBackBtn();
   });
 
-  function daysSince(){
-    const keys=Object.keys(records).sort();
-    if(!keys.length) return 0;
-    const tk=todayStr();
-    let i=keys.length-1;
-    while(i>=0&&keys[i]>tk) i--;
-    if(i<0) return 0;
-    let cur=keys[i],start=cur;
-    while(i>0){const prev=addDays(cur,-1);if(records[prev]){start=prev;cur=prev;i--}else break}
-    return Math.round((new Date(tk+'T00:00:00')-new Date(start+'T00:00:00'))/86400000);
-  }
-
-  // ============== 双心联动交互（中心为 0 刻度，无缝长按直接滑） ==============
+  // ============== 双心联动交互 ==============
   let pressTimer=null,pressStart={x:0,y:0};
   let overlayOpen=false,activeDate='';
   let centerY=0;
@@ -269,16 +273,14 @@
     }
   }
 
-  function saveAndClose(x,y){
-    const cr=clearBtn.getBoundingClientRect();
-    const onClear=x>=cr.left&&x<=cr.right&&y>=cr.top&&y<=cr.bottom;
-    if(onClear){
+  function saveAndClose(){
+    const b=Math.round(bloodTier),c=Math.round(colorTier);
+    if(b===0 && c===0){
       delete records[activeDate];
     }else{
-      const b=Math.round(bloodTier),c=Math.round(colorTier);
       records[activeDate]={blood:b,color:c};
     }
-    save();closeOverlay();refreshDay(activeDate);
+    save();closeOverlay();refreshDay(activeDate);updateDaysSince();updateBackBtn();
   }
 
   function refreshDay(k){
@@ -294,13 +296,10 @@
     });
   }
 
-  // 点击遮罩空白处：保存当前状态并关闭
+  // 点击遮罩空白处 → 保存并关闭
   overlay.addEventListener('click',e=>{
     if(!overlayOpen) return;
-    if(e.target===overlay){
-      const y=pressStart.y; // 用 pressStart 作为 close 坐标近似值
-      saveAndClose(pressStart.x,y);
-    }
+    if(e.target===overlay) saveAndClose();
   });
 
   function startPress(cell,x,y){
@@ -321,10 +320,7 @@
   }
   function endPress(x,y){
     if(pressTimer){clearTimeout(pressTimer);pressTimer=null}
-    if(overlayOpen){
-      saveAndClose(x,y);
-      updateBackBtn();
-    }
+    if(overlayOpen) saveAndClose();
   }
 
   months.addEventListener('touchstart',e=>{
@@ -338,8 +334,7 @@
   document.addEventListener('mouseup',e=>endPress(e.clientX,e.clientY));
   document.addEventListener('contextmenu',e=>e.preventDefault());
 
-  // 暴露给 overlay 点击遮罩保存后也更新按钮/年份
-  const _origClose=closeOverlay;
+  init();
 })();
 </script>
 </body>
