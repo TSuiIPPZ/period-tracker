@@ -24,7 +24,8 @@
   /* 日历网格 */
   .month{padding:8px 14px 26px}
   .month-title{font-size:22px;color:#1a1a1a;padding:20px 4px 14px;font-weight:800;text-align:center;letter-spacing:2px}
-  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);font-size:11px;color:#333;text-align:center;padding-bottom:8px;font-weight:700}
+  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);font-size:15px;color:#333;text-align:center;padding-bottom:8px;font-weight:700}
+  .weekdays>span{display:block;text-align:center;line-height:1.4}
   .days{display:grid;grid-template-columns:repeat(7,1fr);row-gap:14px}
   .day{position:relative;aspect-ratio:1/1.12;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:8px;font-size:14px;color:#1a1a1a}
   .day.empty{visibility:hidden}
@@ -263,6 +264,9 @@
   let blackFullPopped=false; // 标记黑心是否已满血弹出过
   let activeLane='red';  // 'red' 或 'black'，当前控制的车道
   const DEAD_ZONE=30;    // 红黑心切换死区（像素）
+  let startBloodLevel=0; // touchstart 时保存的初始血量（绝对不跳变的基准）
+  let startColorLevel=0; // touchstart 时保存的初始黑心标记
+  let blackEntryTier=0;   // 进入 black lane 瞬间固定的 tier，作为掉血基准（不变量）
 
   function setFill(fill, tier){
     const h=(clamp(tier,0,5)/5)*90;
@@ -275,17 +279,21 @@
     overlayOpen=true;
     overlay.classList.add('show');
     calendar.style.touchAction='none';
+    // UI 初始显示
     setFill(redFill,bloodTier);
-    setFill(blackFill,0);
-    // 初始只显示红心，黑心隐藏（除非已有 color 记录）
+    setFill(blackFill,colorTier);
+    // 初始 lane 判断：有 color 记录 → 进入 black lane，否则 red lane
     if(colorTier>0.01){
       blackWrap.classList.add('show');
-      setFill(blackFill,colorTier);
+      activeLane='black';
+      blackFullPopped=true;
+      blackEntryTier=colorTier;  // 用已有记录的 tier 作为掉血基准
     }else{
       blackWrap.classList.remove('show');
+      activeLane='red';
+      blackFullPopped=false;
+      blackEntryTier=0;
     }
-    blackFullPopped=false;
-    activeLane='red';
     cancelHint.classList.remove('on');
   }
   function closeOverlay(){
@@ -294,6 +302,7 @@
     calendar.style.touchAction='pan-y';
     blackWrap.classList.remove('show');
     blackFullPopped=false;
+    blackEntryTier=0;
     activeLane='red';
     cancelHint.classList.remove('on');
   }
@@ -319,45 +328,47 @@
       // 第一次进入：黑心从下方弹出，弹出瞬间满血
       blackWrap.classList.add('show');
       blackFullPopped=true;
-      colorTier=5;   // 黑心血量从满血开始掉
+      colorTier=5;
+      blackEntryTier=5;     // ★ 固定掉血基准（不变量！）
       setFill(blackFill,colorTier);
       bloodTier=0;
       setFill(redFill,0);
     }else if(activeLane==='black' && dy<=redDeadEnd){
       activeLane='red';
       blackFullPopped=false;
+      blackEntryTier=0;
       cancelHint.classList.remove('on');
     }
 
     // === 仅在当前 lane 内、有效滑动范围内处理血量 ===
     if(activeLane==='red'){
       if(dy<=0){
-        // 上滑：红心血量相对增加
-        const deltaTier=(-dy)*((5-initialBloodTier)/maxUp);
-        bloodTier=clamp(initialBloodTier+deltaTier,0,5);
+        // 上滑：红心血量相对 startBloodLevel 增加
+        const deltaTier=(-dy)*((5-startBloodLevel)/maxUp);
+        bloodTier=clamp(startBloodLevel+deltaTier,0,5);
         setFill(redFill,bloodTier);
       }else if(dy<=redDeadEnd){
-        // 下滑但仍在 red lane 有效区（未进入死区）
-        const deltaTier=dy*(initialBloodTier/redDeadEnd);
-        bloodTier=clamp(initialBloodTier-deltaTier,0,5);
+        // 下滑但仍在 red lane 有效区：从 startBloodLevel 相对减少
+        const deltaTier=dy*(startBloodLevel/redDeadEnd);
+        bloodTier=clamp(startBloodLevel-deltaTier,0,5);
         setFill(redFill,bloodTier);
       }
-      // 死区内 (dy>redDeadEnd 且 <blackDeadStart)：血量保持不变，绝不跳变！
+      // 死区内：血量保持不变！
       colorTier=0;setFill(blackFill,0);
       blackWrap.classList.remove('show');
     }else{
-      // black lane：黑心血量相对减少（从满血 5 开始）
+      // black lane：掉血基于固定的 blackEntryTier（lane 进入瞬间锁定，永不跳变）
       if(!blackFullPopped){
         bloodTier=0;setFill(redFill,0);
         blackWrap.classList.add('show');
         blackFullPopped=true;
-        colorTier=5;
+        colorTier=blackEntryTier;  // 用锁定的基准
         setFill(blackFill,colorTier);
       }
-      // 从 dy=blackDeadStart(110) 起开始掉血
+      // 从 dy=blackDeadStart(110) 起按固定比例掉血
       const effectiveDy=Math.max(dy-blackDeadStart,0);
-      const deltaTier=effectiveDy*(5/blackRange);  // 每 pixel 掉 5/80 tier
-      colorTier=clamp(5-deltaTier,0,5);
+      const deltaTier=effectiveDy*(blackEntryTier/blackRange);
+      colorTier=clamp(blackEntryTier-deltaTier,0,5);
       setFill(blackFill,colorTier);
 
       // 黑心血量完全归零时 → 提示文字闪烁
@@ -400,9 +411,12 @@
     pressStart={x,y};activeDate=cell.dataset.date;
     const r=records[activeDate];
     bloodTier=r?r.blood:0;colorTier=r?r.color:0;
-    initialBloodTier=bloodTier;  // 记录初始血量，用于下滑减血的起点
+    initialBloodTier=bloodTier;
+    // ★ 关键：把已保存的绝对值存为永不跳变的基准
+    startBloodLevel=bloodTier;
+    startColorLevel=colorTier;
     blackFullPopped=false;
-    activeLane='red';
+    activeLane='red';  // openOverlay 会根据实际记录重设
     cancelHint.classList.remove('on');
     pressTimer=setTimeout(openOverlay,400);
   }
