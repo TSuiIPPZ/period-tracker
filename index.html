@@ -34,7 +34,7 @@
   .mini-heart{width:18px;height:16px;flex-shrink:0}
 
   /* 回到今日按钮 */
-  #backToday{position:fixed;right:16px;bottom:28px;z-index:20;width:44px;height:44px;border-radius:50%;background:rgba(34,34,34,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;border:none;font-size:12px;font-weight:600;letter-spacing:1px;box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(20px);transition:opacity .25s,transform .25s}
+  #backToday{position:fixed;right:16px;bottom:28px;z-index:20;width:44px;height:44px;border-radius:50%;background:#E53935;color:#fff;border:none;font-size:12px;font-weight:700;letter-spacing:1px;box-shadow:0 4px 16px rgba(229,57,53,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(20px);transition:opacity .25s,transform .25s}
   #backToday.show{opacity:1;transform:translateY(0)}
 
   /* ===== 磨砂浮层（黑心隐藏/下滑呼出版） ===== */
@@ -42,7 +42,7 @@
   .overlay.show{visibility:visible;opacity:1}
   .overlay-card{width:82vw;max-width:310px;background-color:rgba(255,255,255,0.7);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-radius:28px;padding:28px 22px;display:flex;flex-direction:column;align-items:center;gap:8px;box-shadow:0 14px 40px rgba(0,0,0,.14);transform:scale(.92);transition:transform .2s cubic-bezier(.34,1.56,.64,1), padding .25s ease, gap .25s ease;overflow:hidden}
   .overlay.show .overlay-card{transform:scale(1)}
-  .heart-wrap{width:90px;height:80px;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.18));transition:opacity .28s ease, transform .28s ease, max-height .28s ease, margin .28s ease}
+  .heart-wrap{width:90px;height:80px;display:block;filter:drop-shadow(0 6px 18px rgba(0,0,0,.16)) drop-shadow(0 2px 4px rgba(0,0,0,.08));transition:opacity .28s ease, transform .28s ease, max-height .28s ease, margin .28s ease}
   .heart-svg{width:100%;height:100%;display:block}
 
   /* 黑心初始隐藏，下滑时 .show 呼出 */
@@ -64,20 +64,32 @@
   <div class="overlay-card">
     <div class="heart-wrap" id="redWrap">
       <svg viewBox="0 0 100 90" class="heart-svg" id="redHeart">
-        <defs><clipPath id="clipRed"><path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z"/></clipPath></defs>
-        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="none" stroke="#E53935" stroke-width="4"/>
-        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="#fbeaea"/>
-        <g clip-path="url(#clipRed)"><rect id="redFill" x="0" y="90" width="100" height="0" fill="url(#redGrad)"/></g>
-        <defs><linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF8A80"/><stop offset="100%" stop-color="#C62828"/></linearGradient></defs>
+        <defs>
+          <clipPath id="clipRed"><path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z"/></clipPath>
+          <linearGradient id="redGlassBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE0E0" stop-opacity="0.82"/><stop offset="50%" stop-color="#FFCCCC" stop-opacity="0.65"/><stop offset="100%" stop-color="#FFAAAA" stop-opacity="0.5"/></linearGradient>
+          <linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF8A80"/><stop offset="100%" stop-color="#C62828"/></linearGradient>
+          <radialGradient id="redGlassHi" cx="0.28" cy="0.22" r="0.45"><stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/><stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.35"/><stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
+        </defs>
+        <g clip-path="url(#clipRed)">
+          <rect x="0" y="0" width="100" height="90" fill="url(#redGlassBg)"/>
+          <rect id="redFill" x="0" y="90" width="100" height="0" fill="url(#redGrad)" opacity="0.92"/>
+          <ellipse cx="32" cy="22" rx="22" ry="16" fill="url(#redGlassHi)"/>
+        </g>
       </svg>
     </div>
     <div class="heart-wrap" id="blackWrap">
       <svg viewBox="0 0 100 90" class="heart-svg" id="blackHeart">
-        <defs><clipPath id="clipBlack"><path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z"/></clipPath></defs>
-        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="none" stroke="#222" stroke-width="4"/>
-        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="#ececec"/>
-        <g clip-path="url(#clipBlack)"><rect id="blackFill" x="0" y="90" width="100" height="0" fill="url(#blackGrad)"/></g>
-        <defs><linearGradient id="blackGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#555"/><stop offset="100%" stop-color="#1a1a1a"/></linearGradient></defs>
+        <defs>
+          <clipPath id="clipBlack"><path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z"/></clipPath>
+          <linearGradient id="blackGlassBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#444444" stop-opacity="0.82"/><stop offset="50%" stop-color="#2E2E2E" stop-opacity="0.7"/><stop offset="100%" stop-color="#1A1A1A" stop-opacity="0.55"/></linearGradient>
+          <linearGradient id="blackGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#555"/><stop offset="100%" stop-color="#1a1a1a"/></linearGradient>
+          <radialGradient id="blackGlassHi" cx="0.28" cy="0.22" r="0.45"><stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.2"/><stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
+        </defs>
+        <g clip-path="url(#clipBlack)">
+          <rect x="0" y="0" width="100" height="90" fill="url(#blackGlassBg)"/>
+          <rect id="blackFill" x="0" y="90" width="100" height="0" fill="url(#blackGrad)" opacity="0.95"/>
+          <ellipse cx="32" cy="22" rx="22" ry="16" fill="url(#blackGlassHi)"/>
+        </g>
       </svg>
     </div>
   </div>
@@ -236,6 +248,8 @@
   let overlayOpen=false,activeDate='';
   let centerY=0;
   let bloodTier=0,colorTier=0;
+  let initialBloodTier=0;  // 记录长按初始血量，用于下滑减血起点
+  let blackFullPopped=false; // 标记黑心是否已满血弹出过
 
   function setFill(fill, tier){
     const h=(clamp(tier,0,5)/5)*90;
@@ -249,37 +263,69 @@
     overlay.classList.add('show');
     calendar.style.touchAction='none';
     setFill(redFill,bloodTier);
-    setFill(blackFill,colorTier);
-    // 根据已有数据决定黑心是否初始显示
-    if(colorTier>0.01) blackWrap.classList.add('show');
-    else blackWrap.classList.remove('show');
+    setFill(blackFill,0);
+    // 初始只显示红心，黑心隐藏（除非已有 color 记录）
+    if(colorTier>0.01){
+      blackWrap.classList.add('show');
+      setFill(blackFill,colorTier);
+    }else{
+      blackWrap.classList.remove('show');
+    }
+    blackFullPopped=false;
   }
   function closeOverlay(){
     overlayOpen=false;
     overlay.classList.remove('show');
     calendar.style.touchAction='pan-y';
     blackWrap.classList.remove('show');
+    blackFullPopped=false;
   }
 
   /**
-   * 中心 0 刻度：
-   *   上滑 (dy<=0) → 红心填充 0~5，黑心隐藏且清零
-   *   下滑 (dy>0)  → 红心清零，黑心平滑呼出并填充 0~5
+   * 新交互逻辑（反向）：
+   *   上滑 (dy<=0) → 红心从初始血量增加到满
+   *   下滑 (dy>0)  → 分两段：
+   *     第一段：红心从初始血量减到 0
+   *     红心归零后黑心弹出（满血100%），继续下滑黑心掉血到 0
+   *     黑心归零松手 = 取消记录
    */
   function handleSlide(x,y){
     const dy=y-centerY;
-    const maxUp=140,maxDown=140;
+    const maxUp=140;       // 上滑最大距离（红心增加）
+    const redRange=80;     // 下滑第一段：红心归零距离
+    const blackRange=80;   // 下滑第二段：黑心从满血归零距离
+
     if(dy<=0){
-      bloodTier=clamp(-dy/maxUp,0,1)*5;
+      // === 上滑：红心血量增加 ===
+      const progress=clamp(-dy/maxUp,0,1);
+      // 从初始血量到满血量(5) 线性插值
+      bloodTier=initialBloodTier + progress*(5-initialBloodTier);
       setFill(redFill,bloodTier);
       colorTier=0;setFill(blackFill,0);
       blackWrap.classList.remove('show');
+      blackFullPopped=false;
+    }else if(dy<=redRange){
+      // === 下滑第一段：红心血量从初始值减到 0 ===
+      const progress=dy/redRange;
+      bloodTier=(1-progress)*initialBloodTier;
+      setFill(redFill,bloodTier);
+      colorTier=0;setFill(blackFill,0);
+      blackWrap.classList.remove('show');
+      blackFullPopped=false;
     }else{
+      // === 下滑第二段：红心已归零，黑心弹出并掉血 ===
       bloodTier=0;setFill(redFill,0);
-      colorTier=clamp(dy/maxDown,0,1)*5;
+      // 第一次进入：黑心从下方弹出，弹出瞬间满血(100%)
+      if(!blackFullPopped){
+        blackWrap.classList.add('show');
+        colorTier=5;
+        setFill(blackFill,colorTier);
+        blackFullPopped=true;
+      }
+      // 继续下滑：黑心血量从5减到0
+      const blackProgress=clamp((dy-redRange)/blackRange,0,1);
+      colorTier=(1-blackProgress)*5;
       setFill(blackFill,colorTier);
-      if(colorTier>0.01) blackWrap.classList.add('show');
-      else blackWrap.classList.remove('show');
     }
   }
 
@@ -314,6 +360,8 @@
     pressStart={x,y};activeDate=cell.dataset.date;
     const r=records[activeDate];
     bloodTier=r?r.blood:0;colorTier=r?r.color:0;
+    initialBloodTier=bloodTier;  // 记录初始血量，用于下滑减血的起点
+    blackFullPopped=false;
     pressTimer=setTimeout(openOverlay,400);
   }
   function movePress(x,y,e){
