@@ -48,6 +48,11 @@
   /* 黑心初始隐藏，下滑时 .show 呼出 */
   #blackWrap{opacity:0;max-height:0;transform:translateY(-12px);margin-top:0;pointer-events:none}
   #blackWrap.show{opacity:1;max-height:100px;transform:translateY(0);margin-top:4px;pointer-events:auto}
+
+  /* 黑心下方取消提示 */
+  #cancelHint{font-size:11px;color:transparent;letter-spacing:1px;text-align:center;margin-top:4px;transition:color .25s ease, opacity .25s ease;opacity:0}
+  #cancelHint.on{color:#c0392b;opacity:1;animation:hintPulse 1s ease-in-out infinite}
+  @keyframes hintPulse{0%,100%{opacity:.5}50%{opacity:1}}
 </style>
 </head>
 <body>
@@ -84,6 +89,7 @@
         <g clip-path="url(#clipBlack)"><rect id="blackFill" x="0" y="90" width="100" height="0" fill="url(#blackGrad)"/></g>
       </svg>
     </div>
+    <div id="cancelHint">下滑取消标记</div>
   </div>
 </div>
 
@@ -128,6 +134,7 @@
   const blackFill=document.getElementById('blackFill');
   const blackWrap=document.getElementById('blackWrap');
   const backTodayBtn=document.getElementById('backToday');
+  const cancelHint=document.getElementById('cancelHint');
 
   function buildMonth(y,m){
     const el=document.createElement('div');
@@ -248,6 +255,8 @@
   let bloodTier=0,colorTier=0;
   let initialBloodTier=0;  // 记录长按初始血量，用于下滑减血起点
   let blackFullPopped=false; // 标记黑心是否已满血弹出过
+  let activeLane='red';  // 'red' 或 'black'，当前控制的车道
+  const DEAD_ZONE=30;    // 红黑心切换死区（像素）
 
   function setFill(fill, tier){
     const h=(clamp(tier,0,5)/5)*90;
@@ -270,6 +279,8 @@
       blackWrap.classList.remove('show');
     }
     blackFullPopped=false;
+    activeLane='red';
+    cancelHint.classList.remove('on');
   }
   function closeOverlay(){
     overlayOpen=false;
@@ -277,53 +288,77 @@
     calendar.style.touchAction='pan-y';
     blackWrap.classList.remove('show');
     blackFullPopped=false;
+    activeLane='red';
+    cancelHint.classList.remove('on');
   }
 
   /**
-   * 新交互逻辑（反向）：
-   *   上滑 (dy<=0) → 红心从初始血量增加到满
-   *   下滑 (dy>0)  → 分两段：
-   *     第一段：红心从初始血量减到 0
-   *     红心归零后黑心弹出（满血100%），继续下滑黑心掉血到 0
-   *     黑心归零松手 = 取消记录
+   * 带死区的交互逻辑：
+   *   分界点 dy=80，死区 ±30px 即 [50, 110]
+   *   - 从 red lane 必须越过 dy=110 才切 black lane
+   *   - 从 black lane 必须越过 dy=50 才切 red lane
    */
   function handleSlide(x,y){
     const dy=y-centerY;
-    const maxUp=140;       // 上滑最大距离（红心增加）
-    const redRange=80;     // 下滑第一段：红心归零距离
-    const blackRange=80;   // 下滑第二段：黑心从满血归零距离
+    const maxUp=140;
+    const redRange=80;
+    const blackRange=80;
+    const redDeadEnd=redRange-DEAD_ZONE;      // 50
+    const blackDeadStart=redRange+DEAD_ZONE;  // 110
 
-    if(dy<=0){
-      // === 上滑：红心血量增加 ===
-      const progress=clamp(-dy/maxUp,0,1);
-      // 从初始血量到满血量(5) 线性插值
-      bloodTier=initialBloodTier + progress*(5-initialBloodTier);
-      setFill(redFill,bloodTier);
+    // === Lane 切换（仅在跨出死区时才切换）===
+    if(activeLane==='red' && dy>=blackDeadStart){
+      activeLane='black';
+      // 第一次进入：黑心从下方弹出，弹出瞬间满血
+      blackWrap.classList.add('show');
+      blackFullPopped=true;
+      colorTier=5;
+      setFill(blackFill,colorTier);
+      bloodTier=0;
+      setFill(redFill,0);
+    }else if(activeLane==='black' && dy<=redDeadEnd){
+      activeLane='red';
+      blackFullPopped=false;
+      cancelHint.classList.remove('on');
+    }
+
+    // === 仅在当前 lane 内处理血量变化 ===
+    if(activeLane==='red'){
+      // 上滑：红心增加；下滑：红心从初始值减少
+      if(dy<=0){
+        const progress=clamp(-dy/maxUp,0,1);
+        bloodTier=initialBloodTier + progress*(5-initialBloodTier);
+        setFill(redFill,bloodTier);
+      }else{
+        // 下滑但还在 red lane（dy<=redDeadEnd=50）
+        const progress=clamp(dy/redDeadEnd,0,1);
+        bloodTier=(1-progress)*initialBloodTier;
+        setFill(redFill,bloodTier);
+      }
       colorTier=0;setFill(blackFill,0);
       blackWrap.classList.remove('show');
-      blackFullPopped=false;
-    }else if(dy<=redRange){
-      // === 下滑第一段：红心血量从初始值减到 0 ===
-      const progress=dy/redRange;
-      bloodTier=(1-progress)*initialBloodTier;
-      setFill(redFill,bloodTier);
-      colorTier=0;setFill(blackFill,0);
-      blackWrap.classList.remove('show');
-      blackFullPopped=false;
     }else{
-      // === 下滑第二段：红心已归零，黑心弹出并掉血 ===
-      bloodTier=0;setFill(redFill,0);
-      // 第一次进入：黑心从下方弹出，弹出瞬间满血(100%)
+      // black lane：黑心掉血
+      // 如果还没满血弹出过（例如直接从初始 color>0 进入），先处理弹出
       if(!blackFullPopped){
+        bloodTier=0;setFill(redFill,0);
         blackWrap.classList.add('show');
+        blackFullPopped=true;
         colorTier=5;
         setFill(blackFill,colorTier);
-        blackFullPopped=true;
       }
-      // 继续下滑：黑心血量从5减到0
-      const blackProgress=clamp((dy-redRange)/blackRange,0,1);
+      // 继续下滑：从 dy=blackDeadStart(110) 开始掉血
+      const effectiveDy=Math.max(dy-blackDeadStart,0);
+      const blackProgress=clamp(effectiveDy/blackRange,0,1);
       colorTier=(1-blackProgress)*5;
       setFill(blackFill,colorTier);
+
+      // 黑心血量完全归零时 → 提示文字闪烁
+      if(colorTier<=0.01){
+        cancelHint.classList.add('on');
+      }else{
+        cancelHint.classList.remove('on');
+      }
     }
   }
 
@@ -360,6 +395,8 @@
     bloodTier=r?r.blood:0;colorTier=r?r.color:0;
     initialBloodTier=bloodTier;  // 记录初始血量，用于下滑减血的起点
     blackFullPopped=false;
+    activeLane='red';
+    cancelHint.classList.remove('on');
     pressTimer=setTimeout(openOverlay,400);
   }
   function movePress(x,y,e){
