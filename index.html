@@ -23,7 +23,7 @@
 
   /* 日历网格 */
   .month{padding:8px 14px 26px}
-  .month-title{font-size:22px;color:#1a1a1a;padding:20px 4px 14px;font-weight:800;text-align:center;letter-spacing:2px}
+  .month-title{font-size:19px;color:#222;padding:20px 4px 14px;font-weight:700;text-align:center;letter-spacing:2px}
   .weekdays{display:grid;grid-template-columns:repeat(7,1fr);font-size:15px;color:#333;text-align:center;padding-bottom:8px;font-weight:700}
   .weekdays>span{display:block;text-align:center;line-height:1.4}
   .days{display:grid;grid-template-columns:repeat(7,1fr);row-gap:14px}
@@ -164,7 +164,7 @@
       if(y===rendered.max.y&&m===rendered.max.m) break;
       const n=addMonths(y,m,1);y=n.y;m=n.m;
     }
-    yearBarEl.textContent=now.getFullYear()+' 年';
+    yearBarEl.textContent=now.getFullYear()+' 年 '+parseInt(now.getMonth(),10)+1+'月';
     updateDaysSince();
     requestAnimationFrame(()=>{
       const t=document.querySelector('.day.today');
@@ -178,7 +178,7 @@
     const midY=calendar.scrollTop+calendar.clientHeight*0.35;
     for(const c of cards){
       if(c.offsetTop<=midY && c.offsetTop+c.offsetHeight>midY){
-        yearBarEl.textContent=parseInt(c.dataset.year,10)+' 年';
+        yearBarEl.textContent=parseInt(c.dataset.year,10)+' 年 '+(parseInt(c.dataset.month,10)+1)+'月';
         return;
       }
     }
