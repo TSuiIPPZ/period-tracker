@@ -21,7 +21,7 @@
   .overlay.show{visibility:visible;opacity:1}
   .overlay-card{width:82vw;max-width:310px;background:#FAFAFA;border-radius:28px;padding:30px 22px;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 14px 40px rgba(0,0,0,.16);transform:scale(.92);transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
   .overlay.show .overlay-card{transform:scale(1)}
-  .heart-wrap{width:90px;height:80px;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.18));transition:transform .08s ease}
+  .heart-wrap{width:90px;height:80px;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.18))}
   .heart-svg{width:100%;height:100%;display:block}
   .clear-btn{width:26px;height:26px;border-radius:50%;border:none;background:#e4e4e4;color:#999;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s}
   .clear-btn:active{background:#d4d4d4}
@@ -38,8 +38,11 @@
     <div class="heart-wrap" id="redWrap">
       <svg viewBox="0 0 100 90" class="heart-svg" id="redHeart">
         <defs><clipPath id="clipRed"><path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z"/></clipPath></defs>
-        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="#eee"/>
-        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="none" stroke="#E53935" stroke-width="1" opacity=".3"/>
+        <!-- 红色描边轮廓（始终可见，保证 0 档也能看清） -->
+        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="none" stroke="#E53935" stroke-width="3"/>
+        <!-- 底部浅底，让空状态有载体 -->
+        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="#fbeaea"/>
+        <!-- 液面填充（从底部向上生长） -->
         <g clip-path="url(#clipRed)"><rect id="redFill" x="0" y="90" width="100" height="0" fill="url(#redGrad)"/></g>
         <defs><linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF8A80"/><stop offset="100%" stop-color="#C62828"/></linearGradient></defs>
       </svg>
@@ -48,7 +51,11 @@
     <div class="heart-wrap" id="blackWrap">
       <svg viewBox="0 0 100 90" class="heart-svg" id="blackHeart">
         <defs><clipPath id="clipBlack"><path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z"/></clipPath></defs>
-        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="#eee"/>
+        <!-- 黑色描边轮廓（始终可见，保证 0 档也能看清） -->
+        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="none" stroke="#222" stroke-width="3"/>
+        <!-- 底部浅底 -->
+        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="#ececec"/>
+        <!-- 液面填充 -->
         <g clip-path="url(#clipBlack)"><rect id="blackFill" x="0" y="90" width="100" height="0" fill="url(#blackGrad)"/></g>
         <defs><linearGradient id="blackGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#555"/><stop offset="100%" stop-color="#1a1a1a"/></linearGradient></defs>
       </svg>
@@ -153,15 +160,14 @@
   function updateHeader(){document.getElementById('daysSince').textContent=daysSince()}
   updateHeader();
 
-  // ============== 交互逻辑（重写）==============
+  // ============== 双心联动交互（中心为 0 刻度） ==============
   let pressTimer=null,pressStart={x:0,y:0};
   let overlayOpen=false,activeDate='';
-  // 0~5 连续浮点档位，保存时 round
+  // 以手指**初始触点**为 0 刻度
+  let centerY=0;
+  // 档位（连续浮点，保存时 round）
   let bloodTier=0,colorTier=0;
-  // 长按浮出后，根据初始触点锁定本次操作的对象，绝对隔离
-  let activeHeart=null; // 'red' | 'black'
 
-  // 更新指定 fill 的液面高度（SVG viewBox 高度 90，rect 底座 y=90）
   function setFill(fill, tier){
     const h=(clamp(tier,0,5)/5)*90;
     fill.setAttribute('height',h.toFixed(2));
@@ -169,16 +175,11 @@
   }
 
   function openOverlay(){
-    // 根据当前（也是最后一次）触摸位置锁定操作对象
-    const card=overlay.querySelector('.overlay-card').getBoundingClientRect();
-    const mid=(card.top+card.bottom)/2;
-    // clear button 区域优先 → 但按设计长按不会落在 clear 上，这里兜底
-    activeHeart = pressStart.y < mid ? 'red' : 'black';
-
+    centerY=pressStart.y; // 初始触点 = 0 刻度
     overlayOpen=true;
     overlay.classList.add('show');
     calendar.style.touchAction='none';
-    // 同时把两颗心都渲染好当前档位（未被操作的心保持原值）
+    // 初始渲染（一般都是 0；若已有记录则按记录渲染）
     setFill(redFill,bloodTier);
     setFill(blackFill,colorTier);
   }
@@ -186,34 +187,45 @@
     overlayOpen=false;
     overlay.classList.remove('show');
     calendar.style.touchAction='pan-y';
-    activeHeart=null;
   }
 
   /**
-   * 只操作 activeHeart 锁定的那颗心。
-   * 红心：上滑(y 变小) → 血量增加；下滑(y 变大) → 血量减少。
-   * 黑心：下滑(y 变大) → 颜色加深；上滑(y 变小) → 颜色变浅。
-   * 两个方向**相反**、完全独立。
+   * 统一手势联动控制：
+   *   dy = y - centerY
+   *
+   * 【红心】（向上为正方向）
+   *   dy <= 0 → 向上距离 = |dy| → 档位 = clamp(|dy|/maxUp * 5, 0, 5)
+   *   dy > 0  → 红心 = 0
+   *
+   * 【黑心】（向下，逻辑反转）
+   *   dy <= 0 → 黑心 = 0
+   *   dy > 0  → 只要开始往下（dy 很小），黑心立刻满血 5 档；
+   *             继续往下，档位线性减小；
+   *             dy = maxDown 时，档位 = 0。
+   *
+   *   公式：colorTier = 5 * (1 - clamp(dy, 0, maxDown) / maxDown)
+   *
+   * 两颗心互斥：同时只有一颗心在动，另一颗保持 0。
    */
   function handleSlide(x,y){
-    if(!activeHeart) return;
+    const dy=y-centerY;
+    const maxUp=140;   // 向上滑动 140px 达到红心满血
+    const maxDown=140; // 向下滑动 140px 黑心完全清空
 
-    if(activeHeart==='red'){
-      // 只动红心
-      const wrap=document.getElementById('redWrap').getBoundingClientRect();
-      const t=clamp(y,wrap.top-40,wrap.bottom+40);
-      // y 越小 → tier 越大（上滑填充）
-      const pct=1-(t-(wrap.top-40))/((wrap.bottom+40)-(wrap.top-40));
-      bloodTier=clamp(pct,0,1)*5;
+    if(dy<=0){
+      // 上滑 → 控制红心
+      const pct=clamp(-dy/maxUp,0,1);
+      bloodTier=pct*5;
       setFill(redFill,bloodTier);
+      colorTier=0;
+      setFill(blackFill,0);
     }else{
-      // 只动黑心
-      const wrap=document.getElementById('blackWrap').getBoundingClientRect();
-      const t=clamp(y,wrap.top-40,wrap.bottom+40);
-      // y 越大 → tier 越大（下滑填充）
-      const pct=(t-(wrap.top-40))/((wrap.bottom+40)-(wrap.top-40));
-      colorTier=clamp(pct,0,1)*5;
+      // 下滑 → 控制黑心（逻辑反转：越往下越少）
+      const pct=clamp(dy/maxDown,0,1);
+      colorTier=5*(1-pct); // dy=0→5档；dy=maxDown→0档
       setFill(blackFill,colorTier);
+      bloodTier=0;
+      setFill(redFill,0);
     }
   }
 
@@ -223,7 +235,9 @@
     if(onClear){
       delete records[activeDate];
     }else{
-      records[activeDate]={blood:Math.round(bloodTier),color:Math.round(colorTier)};
+      const b=Math.round(bloodTier);
+      const c=Math.round(colorTier);
+      records[activeDate]={blood:b,color:c};
     }
     save();closeOverlay();refreshDay(activeDate);updateHeader();
   }
