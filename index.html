@@ -66,30 +66,22 @@
       <svg viewBox="0 0 100 90" class="heart-svg" id="redHeart">
         <defs>
           <clipPath id="clipRed"><path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z"/></clipPath>
-          <linearGradient id="redGlassBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFE0E0" stop-opacity="0.82"/><stop offset="50%" stop-color="#FFCCCC" stop-opacity="0.65"/><stop offset="100%" stop-color="#FFAAAA" stop-opacity="0.5"/></linearGradient>
           <linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF8A80"/><stop offset="100%" stop-color="#C62828"/></linearGradient>
-          <radialGradient id="redGlassHi" cx="0.28" cy="0.22" r="0.45"><stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/><stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.35"/><stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
         </defs>
-        <g clip-path="url(#clipRed)">
-          <rect x="0" y="0" width="100" height="90" fill="url(#redGlassBg)"/>
-          <rect id="redFill" x="0" y="90" width="100" height="0" fill="url(#redGrad)" opacity="0.92"/>
-          <ellipse cx="32" cy="22" rx="22" ry="16" fill="url(#redGlassHi)"/>
-        </g>
+        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="none" stroke="#E53935" stroke-width="4"/>
+        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="#fbeaea"/>
+        <g clip-path="url(#clipRed)"><rect id="redFill" x="0" y="90" width="100" height="0" fill="url(#redGrad)"/></g>
       </svg>
     </div>
     <div class="heart-wrap" id="blackWrap">
       <svg viewBox="0 0 100 90" class="heart-svg" id="blackHeart">
         <defs>
           <clipPath id="clipBlack"><path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z"/></clipPath>
-          <linearGradient id="blackGlassBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#444444" stop-opacity="0.82"/><stop offset="50%" stop-color="#2E2E2E" stop-opacity="0.7"/><stop offset="100%" stop-color="#1A1A1A" stop-opacity="0.55"/></linearGradient>
           <linearGradient id="blackGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#555"/><stop offset="100%" stop-color="#1a1a1a"/></linearGradient>
-          <radialGradient id="blackGlassHi" cx="0.28" cy="0.22" r="0.45"><stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.75"/><stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.2"/><stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
         </defs>
-        <g clip-path="url(#clipBlack)">
-          <rect x="0" y="0" width="100" height="90" fill="url(#blackGlassBg)"/>
-          <rect id="blackFill" x="0" y="90" width="100" height="0" fill="url(#blackGrad)" opacity="0.95"/>
-          <ellipse cx="32" cy="22" rx="22" ry="16" fill="url(#blackGlassHi)"/>
-        </g>
+        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="none" stroke="#222" stroke-width="4"/>
+        <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="#ececec"/>
+        <g clip-path="url(#clipBlack)"><rect id="blackFill" x="0" y="90" width="100" height="0" fill="url(#blackGrad)"/></g>
       </svg>
     </div>
   </div>
@@ -187,15 +179,19 @@
   }
 
   function updateDaysSince(){
-    const keys=Object.keys(records).sort();
+    // 取出所有有实质数据的记录日期（blood>0 或 color>0），按日期升序排列
+    const keys=Object.keys(records).filter(k=>{const r=records[k];return r&&(r.blood>0||r.color>0)}).sort();
     if(!keys.length){daysSinceEl.textContent='0';return}
     const tk=todayStr();
-    let i=keys.length-1;
-    while(i>=0&&keys[i]>tk) i--;
-    if(i<0){daysSinceEl.textContent='0';return}
-    let cur=keys[i],start=cur;
-    while(i>0){const prev=addDays(cur,-1);if(records[prev]){start=prev;cur=prev;i--}else break}
-    daysSinceEl.textContent=Math.round((new Date(tk+'T00:00:00')-new Date(start+'T00:00:00'))/86400000);
+    // 从后往前找离今天最近且 <= 今天 的那条记录
+    let lastIdx=keys.length-1;
+    while(lastIdx>=0&&keys[lastIdx]>tk) lastIdx--;
+    if(lastIdx<0){daysSinceEl.textContent='0';return}
+    const lastDate=keys[lastIdx];
+    // 用本地日期计算，避免 Safari 的 UTC 解析差异
+    const a=new Date(tk+'T00:00:00');
+    const b=new Date(lastDate+'T00:00:00');
+    daysSinceEl.textContent=Math.round((a-b)/86400000);
   }
 
   function updateBackBtn(){
