@@ -23,7 +23,7 @@
 
   /* 日历网格 */
   .month{padding:8px 14px 26px}
-  .month-title{font-size:32px;color:#1a1a1a;padding:20px 4px 14px;font-weight:800;text-align:center;letter-spacing:2px}
+  .month-title{font-size:22px;color:#1a1a1a;padding:20px 4px 14px;font-weight:800;text-align:center;letter-spacing:2px}
   .weekdays{display:grid;grid-template-columns:repeat(7,1fr);font-size:11px;color:#333;text-align:center;padding-bottom:8px;font-weight:700}
   .days{display:grid;grid-template-columns:repeat(7,1fr);row-gap:14px}
   .day{position:relative;aspect-ratio:1/1.12;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:8px;font-size:14px;color:#1a1a1a}
@@ -42,8 +42,8 @@
   .overlay.show{visibility:visible;opacity:1}
   .overlay-card{width:82vw;max-width:310px;background-color:rgba(255,255,255,0.7);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-radius:28px;padding:28px 22px;display:flex;flex-direction:column;align-items:center;gap:8px;box-shadow:0 14px 40px rgba(0,0,0,.14);transform:scale(.92);transition:transform .2s cubic-bezier(.34,1.56,.64,1), padding .25s ease, gap .25s ease;overflow:hidden}
   .overlay.show .overlay-card{transform:scale(1)}
-  .heart-wrap{width:90px;height:80px;display:block;background:transparent;overflow:visible;filter:drop-shadow(0 6px 18px rgba(0,0,0,.16)) drop-shadow(0 2px 4px rgba(0,0,0,.08));transition:opacity .28s ease, transform .28s ease, max-height .28s ease, margin .28s ease}
-  .heart-svg{width:100%;height:100%;display:block;background:transparent}
+  .heart-wrap{width:90px;height:80px;display:block;background:transparent;overflow:visible;transition:opacity .28s ease, transform .28s ease, max-height .28s ease, margin .28s ease}
+  .heart-svg{width:100%;height:100%;display:block;background:transparent;filter:drop-shadow(0 4px 6px rgba(0,0,0,.1))}
 
   /* 黑心初始隐藏，下滑时 .show 呼出 */
   #blackWrap{opacity:0;max-height:0;transform:translateY(-12px);margin-top:0;pointer-events:none}
@@ -108,12 +108,14 @@
     const fillColor = isBlood?redShade:blackShade;
     const strokeColor = isBlood?'#E53935':'#222';
     const bgColor = isBlood?'#fbeaea':'#ececec';
-    const fillH = (clamp(tier,0,5)/5)*22;
+    const fillH = (clamp(tier,0,5)/5)*90;
     const id = 'mh'+(isBlood?'r':'b')+tier+Math.random().toString(36).slice(2,6);
-    return `<span class="mini-heart-wrap"><svg class="mini-heart" viewBox="0 0 24 22">
-      <defs><clipPath id="${id}"><path d="M12 20 C4 14,1 10,1 6 C1 3,3 1,5 1 C7 1,9 3,12 5 C15 3,17 1,19 1 C21 1,23 3,23 6 C23 10,20 14,12 20 Z"/></clipPath></defs>
-      <path d="M12 20 C4 14,1 10,1 6 C1 3,3 1,5 1 C7 1,9 3,12 5 C15 3,17 1,19 1 C21 1,23 3,23 6 C23 10,20 14,12 20 Z" fill="${bgColor}" stroke="${strokeColor}" stroke-width="0.9"/>
-      <g clip-path="url(#${id})"><rect x="0" y="${(22-fillH).toFixed(2)}" width="24" height="${fillH.toFixed(2)}" fill="${fillColor}"/></g>
+    // 与弹窗大爱心完全相同的 viewBox 和 path
+    const heartPath='M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z';
+    return `<span class="mini-heart-wrap"><svg class="mini-heart" viewBox="0 0 100 90">
+      <defs><clipPath id="${id}"><path d="${heartPath}"/></clipPath></defs>
+      <path d="${heartPath}" fill="${bgColor}" stroke="${strokeColor}" stroke-width="4"/>
+      <g clip-path="url(#${id})"><rect x="0" y="${(90-fillH).toFixed(2)}" width="100" height="${fillH.toFixed(2)}" fill="${fillColor}"/></g>
     </svg></span>`;
   }
 
