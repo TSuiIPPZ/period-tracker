@@ -7,6 +7,7 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;width:100%;overflow-x:hidden;background:#FAFAFA;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Helvetica,Arial,sans-serif;color:#333}
+  body{padding-top:env(safe-area-inset-top)}
   #calendar{height:100vh;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;-webkit-overflow-scrolling:touch}
   #header{position:sticky;top:0;z-index:5;padding:14px 16px 10px;background:#FAFAFA;font-size:12px;color:#999;text-align:center;letter-spacing:1px}
   .month{padding:4px 14px 26px}
@@ -16,7 +17,7 @@
   .day{position:relative;aspect-ratio:1/1.05;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:8px;font-size:14px;color:#333;gap:2px}
   .day.empty{visibility:hidden}
   .day.today .num{width:26px;height:26px;border-radius:50%;background:#222;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px}
-  .mini-heart{width:18px;height:16px;margin-top:2px;opacity:.9}
+  .mini-heart{width:18px;height:16px;margin-top:2px}
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;z-index:100;visibility:hidden;opacity:0;transition:opacity .18s ease}
   .overlay.show{visibility:visible;opacity:1}
   .overlay-card{width:82vw;max-width:310px;background:#FAFAFA;border-radius:28px;padding:30px 22px;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 14px 40px rgba(0,0,0,.16);transform:scale(.92);transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
@@ -25,6 +26,8 @@
   .heart-svg{width:100%;height:100%;display:block}
   .clear-btn{width:26px;height:26px;border-radius:50%;border:none;background:#e4e4e4;color:#999;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s}
   .clear-btn:active{background:#d4d4d4}
+  #backToday{position:fixed;right:16px;bottom:28px;z-index:20;width:44px;height:44px;border-radius:50%;background:#222;color:#fff;border:none;font-size:12px;font-weight:600;letter-spacing:1px;box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(20px);transition:opacity .25s,transform .25s}
+  #backToday.show{opacity:1;transform:translateY(0)}
 </style>
 </head>
 <body>
@@ -32,17 +35,15 @@
   <div id="header">距上次开始已过 <span id="daysSince">0</span> 天</div>
   <div id="months"></div>
 </div>
+<button id="backToday">今天</button>
 
 <div id="overlay" class="overlay">
   <div class="overlay-card">
     <div class="heart-wrap" id="redWrap">
       <svg viewBox="0 0 100 90" class="heart-svg" id="redHeart">
         <defs><clipPath id="clipRed"><path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z"/></clipPath></defs>
-        <!-- 红色描边轮廓（始终可见，保证 0 档也能看清） -->
         <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="none" stroke="#E53935" stroke-width="3"/>
-        <!-- 底部浅底，让空状态有载体 -->
         <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="#fbeaea"/>
-        <!-- 液面填充（从底部向上生长） -->
         <g clip-path="url(#clipRed)"><rect id="redFill" x="0" y="90" width="100" height="0" fill="url(#redGrad)"/></g>
         <defs><linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF8A80"/><stop offset="100%" stop-color="#C62828"/></linearGradient></defs>
       </svg>
@@ -51,11 +52,8 @@
     <div class="heart-wrap" id="blackWrap">
       <svg viewBox="0 0 100 90" class="heart-svg" id="blackHeart">
         <defs><clipPath id="clipBlack"><path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z"/></clipPath></defs>
-        <!-- 黑色描边轮廓（始终可见，保证 0 档也能看清） -->
         <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="none" stroke="#222" stroke-width="3"/>
-        <!-- 底部浅底 -->
         <path d="M50 86 C18 62,4 46,4 26 C4 12,16 4,30 4 C40 4,47 12,50 18 C53 12,60 4,70 4 C84 4,96 12,96 26 C96 46,82 62,50 86 Z" fill="#ececec"/>
-        <!-- 液面填充 -->
         <g clip-path="url(#clipBlack)"><rect id="blackFill" x="0" y="90" width="100" height="0" fill="url(#blackGrad)"/></g>
         <defs><linearGradient id="blackGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#555"/><stop offset="100%" stop-color="#1a1a1a"/></linearGradient></defs>
       </svg>
@@ -74,16 +72,27 @@
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const addMonths=(y,m,d)=>{m+=d;while(m<0){m+=12;y--}while(m>11){m-=12;y++}return{y,m}};
   const addDays=(s,n)=>{const x=new Date(s+'T00:00:00');x.setDate(x.getDate()+n);return dkey(x.getFullYear(),x.getMonth(),x.getDate())};
-  const miniHearts={
-    light:'<svg class="mini-heart" viewBox="0 0 24 22"><path d="M12 20 C4 14,1 10,1 6 C1 3,3 1,5 1 C7 1,9 3,12 5 C15 3,17 1,19 1 C21 1,23 3,23 6 C23 10,20 14,12 20 Z" fill="#FFCDD2"/></svg>',
-    mid:'<svg class="mini-heart" viewBox="0 0 24 22"><path d="M12 20 C4 14,1 10,1 6 C1 3,3 1,5 1 C7 1,9 3,12 5 C15 3,17 1,19 1 C21 1,23 3,23 6 C23 10,20 14,12 20 Z" fill="#EF5350"/></svg>',
-    deep:'<svg class="mini-heart" viewBox="0 0 24 22"><path d="M12 20 C4 14,1 10,1 6 C1 3,3 1,5 1 C7 1,9 3,12 5 C15 3,17 1,19 1 C21 1,23 3,23 6 C23 10,20 14,12 20 Z" fill="#C62828"/></svg>'
-  };
-  function miniByTier(b){
-    if(!b) return '';
-    if(b<=1) return miniHearts.light;
-    if(b<=3) return miniHearts.mid;
-    return miniHearts.deep;
+
+  // 日期下方血量可视化：根据 blood tier 动态生成带 clip-path 的 SVG 小爱心
+  // 若 blood==0 但 color>0，显示黑心（颜色深浅填充）
+  function miniHeartSvg(blood,color){
+    if(!blood && !color) return '';
+    // 血量越高红色越深
+    const redShade=['#FFCDD2','#EF9A9A','#E57373','#E53935','#C62828','#B71C1C'][blood]||'#FFCDD2';
+    const blackShade=['#ddd','#999','#666','#444','#222','#000'][color]||'#ddd';
+    const isBlood = blood>0;
+    const tier = isBlood?blood:color;
+    const fillPct = (clamp(tier,0,5)/5)*100; // 0~100
+    const fillColor = isBlood?redShade:blackShade;
+    const strokeColor = isBlood?'#E53935':'#222';
+    const bgColor = isBlood?'#fbeaea':'#ececec';
+    // viewBox 24x22，爱心高度 22，fill rect 底座 y=22，向上生长
+    const fillH = (clamp(tier,0,5)/5)*22;
+    return `<svg class="mini-heart" viewBox="0 0 24 22">
+      <defs><clipPath id="mhc${isBlood?'r':'b'}${blood||color}"><path d="M12 20 C4 14,1 10,1 6 C1 3,3 1,5 1 C7 1,9 3,12 5 C15 3,17 1,19 1 C21 1,23 3,23 6 C23 10,20 14,12 20 Z"/></clipPath></defs>
+      <path d="M12 20 C4 14,1 10,1 6 C1 3,3 1,5 1 C7 1,9 3,12 5 C15 3,17 1,19 1 C21 1,23 3,23 6 C23 10,20 14,12 20 Z" fill="${bgColor}" stroke="${strokeColor}" stroke-width="0.8"/>
+      <g clip-path="url(#mhc${isBlood?'r':'b'}${blood||color})"><rect x="0" y="${22-fillH.toFixed(2)}" width="24" height="${fillH.toFixed(2)}" fill="${fillColor}"/></g>
+    </svg>`;
   }
 
   const calendar=document.getElementById('calendar');
@@ -92,6 +101,7 @@
   const clearBtn=document.getElementById('clearBtn');
   const redFill=document.getElementById('redFill');
   const blackFill=document.getElementById('blackFill');
+  const backTodayBtn=document.getElementById('backToday');
 
   function buildMonth(y,m){
     const el=document.createElement('div');
@@ -106,7 +116,7 @@
     for(let d=1;d<=dim;d++){
       const k=dkey(y,m,d);
       const r=records[k];
-      const heartHtml=r?miniByTier(r.blood):'';
+      const heartHtml=r?miniHeartSvg(r.blood,r.color):'';
       h+=`<div class="day${k===tk?' today':''}" data-date="${k}"><span class="num">${d}</span>${heartHtml}</div>`;
     }
     h+='</div>';
@@ -128,6 +138,18 @@
     });
   })();
 
+  // 控制「回到今天」按钮显隐
+  function updateBackBtn(){
+    const t=document.querySelector('.day.today');
+    if(!t){backTodayBtn.classList.remove('show');return}
+    const r=t.getBoundingClientRect();
+    // 今天不在视口中央附近时显示按钮
+    if(r.top < 40 || r.bottom > window.innerHeight - 40){
+      backTodayBtn.classList.add('show');
+    }else{
+      backTodayBtn.classList.remove('show');
+    }
+  }
   calendar.addEventListener('scroll',()=>{
     const{scrollTop:st,scrollHeight:sh,clientHeight:ch}=calendar;
     if(sh-st-ch<400){
@@ -141,7 +163,33 @@
       calendar.scrollTop+=calendar.scrollHeight-old;
       rendered.min=p;
     }
+    updateBackBtn();
   },{passive:true});
+
+  backTodayBtn.addEventListener('click',()=>{
+    let t=document.querySelector('.day.today');
+    if(!t){
+      // 如果当前渲染范围内还没有今天所在月，先补渲染
+      const today=new Date();
+      const tm=addMonths(today.getFullYear(),today.getMonth(),0);
+      // 确保今天月已渲染
+      // 简单做法：重置
+      months.innerHTML='';
+      const newMin=addMonths(tm.y,tm.m,-2);
+      const newMax=addMonths(tm.y,tm.m,2);
+      rendered={min:newMin,max:newMax};
+      for(let y=newMin.y,m=newMin.m;;){
+        months.appendChild(buildMonth(y,m));
+        if(y===newMax.y&&m===newMax.m) break;
+        const n=addMonths(y,m,1);y=n.y;m=n.m;
+      }
+      t=document.querySelector('.day.today');
+    }
+    if(t){
+      calendar.scrollTo({top:t.offsetTop-calendar.clientHeight/2+t.clientHeight/2,behavior:'smooth'});
+    }
+    updateBackBtn();
+  });
 
   function daysSince(){
     const keys=Object.keys(records).sort();
@@ -159,13 +207,12 @@
   }
   function updateHeader(){document.getElementById('daysSince').textContent=daysSince()}
   updateHeader();
+  updateBackBtn();
 
-  // ============== 双心联动交互（中心为 0 刻度） ==============
+  // ============== 双心联动交互（中心为 0 刻度，无缝长按直接滑） ==============
   let pressTimer=null,pressStart={x:0,y:0};
   let overlayOpen=false,activeDate='';
-  // 以手指**初始触点**为 0 刻度
   let centerY=0;
-  // 档位（连续浮点，保存时 round）
   let bloodTier=0,colorTier=0;
 
   function setFill(fill, tier){
@@ -175,11 +222,10 @@
   }
 
   function openOverlay(){
-    centerY=pressStart.y; // 初始触点 = 0 刻度
+    centerY=pressStart.y;
     overlayOpen=true;
     overlay.classList.add('show');
     calendar.style.touchAction='none';
-    // 初始渲染（一般都是 0；若已有记录则按记录渲染）
     setFill(redFill,bloodTier);
     setFill(blackFill,colorTier);
   }
@@ -189,40 +235,19 @@
     calendar.style.touchAction='pan-y';
   }
 
-  /**
-   * 统一手势联动控制：
-   *   dy = y - centerY
-   *
-   * 【红心】（向上为正方向）
-   *   dy <= 0 → 向上距离 = |dy| → 档位 = clamp(|dy|/maxUp * 5, 0, 5)
-   *   dy > 0  → 红心 = 0
-   *
-   * 【黑心】（向下，逻辑反转）
-   *   dy <= 0 → 黑心 = 0
-   *   dy > 0  → 只要开始往下（dy 很小），黑心立刻满血 5 档；
-   *             继续往下，档位线性减小；
-   *             dy = maxDown 时，档位 = 0。
-   *
-   *   公式：colorTier = 5 * (1 - clamp(dy, 0, maxDown) / maxDown)
-   *
-   * 两颗心互斥：同时只有一颗心在动，另一颗保持 0。
-   */
   function handleSlide(x,y){
     const dy=y-centerY;
-    const maxUp=140;   // 向上滑动 140px 达到红心满血
-    const maxDown=140; // 向下滑动 140px 黑心完全清空
-
+    const maxUp=140;
+    const maxDown=140;
     if(dy<=0){
-      // 上滑 → 控制红心
       const pct=clamp(-dy/maxUp,0,1);
       bloodTier=pct*5;
       setFill(redFill,bloodTier);
       colorTier=0;
       setFill(blackFill,0);
     }else{
-      // 下滑 → 控制黑心（逻辑反转：越往下越少）
       const pct=clamp(dy/maxDown,0,1);
-      colorTier=5*(1-pct); // dy=0→5档；dy=maxDown→0档
+      colorTier=5*(1-pct);
       setFill(blackFill,colorTier);
       bloodTier=0;
       setFill(redFill,0);
@@ -239,7 +264,7 @@
       const c=Math.round(colorTier);
       records[activeDate]={blood:b,color:c};
     }
-    save();closeOverlay();refreshDay(activeDate);updateHeader();
+    save();closeOverlay();refreshDay(activeDate);updateHeader();updateBackBtn();
   }
 
   function refreshDay(k){
@@ -249,7 +274,7 @@
       cell.querySelectorAll('.mini-heart').forEach(h=>h.remove());
       if(r){
         const tmp=document.createElement('template');
-        tmp.innerHTML=miniByTier(r.blood);
+        tmp.innerHTML=miniHeartSvg(r.blood,r.color);
         cell.appendChild(tmp.content.firstChild);
       }
     });
@@ -267,11 +292,13 @@
   }
   function movePress(x,y,e){
     if(!overlayOpen){
+      // 长按 400ms 内如果手指明显移动，取消长按（视为滚动）
       if(Math.hypot(x-pressStart.x,y-pressStart.y)>10){
         if(pressTimer){clearTimeout(pressTimer);pressTimer=null}
       }
       return;
     }
+    // 浮层已经弹出，**不松开手指直接滑**：无缝实时响应
     if(e) e.preventDefault();
     handleSlide(x,y);
   }
@@ -290,6 +317,7 @@
   document.addEventListener('touchend',e=>{
     endPress(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
   });
+  // 桌面支持
   document.addEventListener('mousedown',e=>{
     const cell=e.target.closest('.day');
     startPress(cell,e.clientX,e.clientY);
